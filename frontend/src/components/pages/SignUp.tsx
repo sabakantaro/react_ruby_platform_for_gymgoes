@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react"
-import { useHistory } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import Cookies from "js-cookie"
 
 import { makeStyles, Theme } from "@material-ui/core/styles"
@@ -35,7 +35,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 // サインアップ用ページ
 const SignUp: React.FC = () => {
   const classes = useStyles()
-  const histroy = useHistory()
+  const navigate = useNavigate()
 
   const { setIsSignedIn, setCurrentUser } = useContext(AuthContext)
 
@@ -69,7 +69,7 @@ const SignUp: React.FC = () => {
         setIsSignedIn(true)
         setCurrentUser(res.data.data)
 
-        histroy.push("/")
+        navigate("/")
 
         console.log("Signed in successfully!")
       } else {
