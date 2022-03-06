@@ -11,12 +11,12 @@ const Home: React.FC = () => {
       {
         isSignedIn && currentUser ? (
           <>
-            <h1>Signed in successfully!</h1>
-            <h2>Email: {currentUser?.email}</h2>
-            <h2>Name: {currentUser?.name}</h2>
+            <h1>ログインに成功しました。</h1>
+            <h2>メールアドレス: {currentUser?.email}</h2>
+            <h2>名前: {currentUser?.name}</h2>
           </>
         ) : (
-          <h1>Not signed in</h1>
+          <h1>現在、ログインしておりません。</h1>
         )
       }
     </>
