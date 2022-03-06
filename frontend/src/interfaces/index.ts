@@ -1,4 +1,4 @@
-// サインアップ
+// 新規登録
 export interface SignUpParams {
     name: string
     email: string

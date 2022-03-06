@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   }
 }))
 
-// サインアップ用ページ
+// 新規登録用ページ
 const SignUp: React.FC = () => {
   const classes = useStyles()
   const navigate = useNavigate()
@@ -85,13 +85,13 @@ const SignUp: React.FC = () => {
     <>
       <form noValidate autoComplete="off">
         <Card className={classes.card}>
-          <CardHeader className={classes.header} title="Sign Up" />
+          <CardHeader className={classes.header} title="新規登録" />
           <CardContent>
             <TextField
               variant="outlined"
               required
               fullWidth
-              label="Name"
+              label="名前"
               value={name}
               margin="dense"
               onChange={event => setName(event.target.value)}
@@ -100,7 +100,7 @@ const SignUp: React.FC = () => {
               variant="outlined"
               required
               fullWidth
-              label="Email"
+              label="メールアドレス"
               value={email}
               margin="dense"
               onChange={event => setEmail(event.target.value)}
@@ -109,7 +109,7 @@ const SignUp: React.FC = () => {
               variant="outlined"
               required
               fullWidth
-              label="Password"
+              label="パスワード"
               type="password"
               value={password}
               margin="dense"
@@ -120,7 +120,7 @@ const SignUp: React.FC = () => {
               variant="outlined"
               required
               fullWidth
-              label="Password Confirmation"
+              label="パスワード再確認"
               type="password"
               value={passwordConfirmation}
               margin="dense"
@@ -137,7 +137,7 @@ const SignUp: React.FC = () => {
               className={classes.submitBtn}
               onClick={handleSubmit}
             >
-              Submit
+              登録
             </Button>
           </CardContent>
         </Card>
@@ -146,7 +146,7 @@ const SignUp: React.FC = () => {
         open={alertMessageOpen}
         setOpen={setAlertMessageOpen}
         severity="error"
-        message="Invalid emai or password"
+        message="入力情報に誤りがあります。"
       />
     </>
   )
