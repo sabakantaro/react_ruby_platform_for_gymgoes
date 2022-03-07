@@ -1,5 +1,5 @@
 import React, { useContext } from "react"
-import { useHistory, Link } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import Cookies from "js-cookie"
 
 import { makeStyles, Theme } from "@material-ui/core/styles"
@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 const Header: React.FC = () => {
   const { loading, isSignedIn, setIsSignedIn } = useContext(AuthContext)
   const classes = useStyles()
-  const histroy = useHistory()
+  const navigate = useNavigate()
 
   const handleSignOut = async (e: React.MouseEvent<HTMLButtonElement>) => {
     try {
@@ -45,7 +45,7 @@ const Header: React.FC = () => {
         Cookies.remove("_uid")
 
         setIsSignedIn(false)
-        histroy.push("/signin")
+        navigate("/signin")
 
         console.log("Succeeded in sign out")
       } else {
@@ -67,7 +67,7 @@ const Header: React.FC = () => {
             className={classes.linkBtn}
             onClick={handleSignOut}
           >
-            Sign out
+            ログアウト
           </Button>
         )
       } else {
@@ -79,7 +79,7 @@ const Header: React.FC = () => {
               color="inherit"
               className={classes.linkBtn}
             >
-              Sign in
+              ログイン
             </Button>
             <Button
               component={Link}
@@ -87,7 +87,7 @@ const Header: React.FC = () => {
               color="inherit"
               className={classes.linkBtn}
             >
-              Sign Up
+              新規登録
             </Button>
           </>
         )

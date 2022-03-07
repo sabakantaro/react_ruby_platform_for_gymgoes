@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react"
-import { useHistory, Link } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import Cookies from "js-cookie"
 
 import { makeStyles, Theme } from "@material-ui/core/styles"
@@ -43,7 +43,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 // サインイン用ページ
 const SignIn: React.FC = () => {
   const classes = useStyles()
-  const history = useHistory()
+  const navigate = useNavigate()
 
   const { setIsSignedIn, setCurrentUser } = useContext(AuthContext)
 
@@ -72,7 +72,7 @@ const SignIn: React.FC = () => {
         setIsSignedIn(true)
         setCurrentUser(res.data.data)
 
-        history.push("/")
+        navigate("/")
 
         console.log("Signed in successfully!")
       } else {
@@ -88,13 +88,13 @@ const SignIn: React.FC = () => {
     <>
       <form noValidate autoComplete="off">
         <Card className={classes.card}>
-          <CardHeader className={classes.header} title="Sign In" />
+          <CardHeader className={classes.header} title="ログイン" />
           <CardContent>
             <TextField
               variant="outlined"
               required
               fullWidth
-              label="Email"
+              label="メールアドレス"
               value={email}
               margin="dense"
               onChange={event => setEmail(event.target.value)}
@@ -103,9 +103,9 @@ const SignIn: React.FC = () => {
               variant="outlined"
               required
               fullWidth
-              label="Password"
+              label="パスワード"
               type="password"
-              placeholder="At least 6 characters"
+              placeholder="パスワードは6文字以上です。"
               value={password}
               margin="dense"
               autoComplete="current-password"
@@ -121,13 +121,13 @@ const SignIn: React.FC = () => {
               className={classes.submitBtn}
               onClick={handleSubmit}
             >
-              Submit
+              ログイン
             </Button>
             <Box textAlign="center" className={classes.box}>
               <Typography variant="body2">
-                Don't have an account? &nbsp;
+                新規登録は右のリンクからできます。 &nbsp;
                 <Link to="/signup" className={classes.link}>
-                  Sign Up now!
+                  新規登録
                 </Link>
               </Typography>
             </Box>
@@ -138,7 +138,7 @@ const SignIn: React.FC = () => {
         open={alertMessageOpen}
         setOpen={setAlertMessageOpen}
         severity="error"
-        message="Invalid emai or password"
+        message="メールアドレスかパスワードに誤りがあります。"
       />
     </>
   )

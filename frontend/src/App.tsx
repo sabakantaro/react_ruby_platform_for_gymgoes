@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext } from "react"
-import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-dom"
+import { BrowserRouter as Router, Route, Navigate, Routes } from "react-router-dom"
 
 import CommonLayout from "components/layouts/CommonLayout"
 import Home from "components/pages/Home"
@@ -57,7 +57,7 @@ const App: React.FC = () => {
       if (isSignedIn) {
         return children
       } else {
-        return <Redirect to="/signin" />
+        return <Navigate to="/signin" />
       }
     } else {
       return <></>
@@ -68,13 +68,11 @@ const App: React.FC = () => {
     <Router>
       <AuthContext.Provider value={{ loading, setLoading, isSignedIn, setIsSignedIn, currentUser, setCurrentUser}}>
         <CommonLayout>
-          <Switch>
-            <Route exact path="/signup" component={SignUp} />
-            <Route exact path="/signin" component={SignIn} />
-            <Private>
-              <Route exact path="/" component={Home} />
-            </Private>
-          </Switch>
+          <Routes>
+            <Route path="/signup" element={<SignUp/>} />
+            <Route path="/signin" element={<SignIn/>} />
+            <Route path="/" element={<Private children={<Home />} />}/>
+          </Routes>
         </CommonLayout>
       </AuthContext.Provider>
     </Router>
