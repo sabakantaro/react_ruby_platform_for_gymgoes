@@ -14,7 +14,7 @@ import Box from "@material-ui/core/Box"
 import { AuthContext } from "App"
 import AlertMessage from "components/utils/AlertMessage"
 import { signIn } from "lib/api/auth"
-import { SignInParams } from "interfaces/index"
+import { SignInData } from "interfaces/index"
 
 const useStyles = makeStyles((theme: Theme) => ({
   container: {
@@ -54,7 +54,7 @@ const SignIn: React.FC = () => {
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
 
-    const params: SignInParams = {
+    const params: SignInData = {
       email: email,
       password: password
     }
@@ -64,7 +64,6 @@ const SignIn: React.FC = () => {
       console.log(res)
 
       if (res.status === 200) {
-        // ログインに成功した場合はCookieに各値を格納
         Cookies.set("_access_token", res.headers["access-token"])
         Cookies.set("_client", res.headers["client"])
         Cookies.set("_uid", res.headers["uid"])
@@ -72,7 +71,7 @@ const SignIn: React.FC = () => {
         setIsSignedIn(true)
         setCurrentUser(res.data.data)
 
-        navigate("/")
+        navigate("/home")
 
         console.log("Signed in successfully!")
       } else {
@@ -117,7 +116,7 @@ const SignIn: React.FC = () => {
               size="large"
               fullWidth
               color="default"
-              disabled={!email || !password ? true : false} // 空欄があった場合はボタンを押せないように
+              disabled={!email || !password ? true : false}
               className={classes.submitBtn}
               onClick={handleSubmit}
             >
@@ -134,7 +133,7 @@ const SignIn: React.FC = () => {
           </CardContent>
         </Card>
       </form>
-      <AlertMessage // エラーが発生した場合はアラートを表示
+      <AlertMessage
         open={alertMessageOpen}
         setOpen={setAlertMessageOpen}
         severity="error"

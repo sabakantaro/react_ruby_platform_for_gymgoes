@@ -3,8 +3,12 @@ import { BrowserRouter as Router, Route, Navigate, Routes } from "react-router-d
 
 import CommonLayout from "components/layouts/CommonLayout"
 import Home from "components/pages/Home"
+import ChatRooms from "components/pages/ChatRooms"
+import ChatRoom from "components/pages/ChatRoom"
+import Users from "components/pages/Users"
 import SignUp from "components/pages/SignUp"
 import SignIn from "components/pages/SignIn"
+import NotFound from "components/pages/NotFound"
 
 import { getCurrentUser } from "lib/api/auth"
 import { User } from "interfaces/index"
@@ -29,12 +33,11 @@ const App: React.FC = () => {
   const handleGetCurrentUser = async () => {
     try {
       const res = await getCurrentUser()
+      console.log(res)
 
-      if (res?.data.isLogin === true) {
+      if (res?.status === 200) {
         setIsSignedIn(true)
-        setCurrentUser(res?.data.data)
-
-        console.log(res?.data.data)
+        setCurrentUser(res?.data.currentUser)
       } else {
         console.log("No current user")
       }
@@ -71,7 +74,11 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/signup" element={<SignUp/>} />
             <Route path="/signin" element={<SignIn/>} />
-            <Route path="/" element={<Private children={<Home />} />}/>
+            <Route path="/home" element={<Private children={<Home />} />}/>
+            <Route path="/users" element={<Private children={<Users />} />} />
+            <Route path="/chat_rooms" element={<Private children={<ChatRooms />} />}/>
+            <Route path="/chatroom/:id" element={<Private children={<ChatRoom />} />}/>
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </CommonLayout>
       </AuthContext.Provider>

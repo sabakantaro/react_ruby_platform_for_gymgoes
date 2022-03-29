@@ -17,11 +17,11 @@ class Api::V1::UsersController < ApplicationController
         @user.profile = user_params[:profile]
         @user.image = user_params[:image] if user_params[:image] != ""
 
-    if @user.save
-        render json: { status: 200, user: @user }
-    else
-        render json: { status: 500, message: "更新に失敗しました" }
-    end
+        if @user.save
+            render json: { status: 200, user: @user }
+        else
+            render json: { status: 500, message: "更新に失敗しました" }
+        end
     end
 
     private
