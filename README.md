@@ -1,13 +1,9 @@
-## アプリの概要
+## 【Summary】
+This is matching platform for everyone who want to workout with someone.<br>
 
-24h ジムなどで気軽に合同トレーニングができる、マッチョによるマッチョのためのマッチングアプリです。
-※現在作成中
+※In preparation.
 
-## 使用技術
-
-※作成中のため使用予定の技術となります。
-
-### バックエンド
+### 【Programing language】
 
 ・Ruby(3.0.3)<br>
 ・Rails(6.1.4.4)<br>
@@ -18,7 +14,7 @@
 ・Javascript<br>
 ・React.js<br>
 
-### 開発環境、インフラ
+### 【Development env. & infrastructure】
 
 ・Docker/docker-compose<br>
 ・MySQL(8.0.23)<br>
@@ -28,7 +24,7 @@
 ・GCP<br>
 ・Terraform<br>
 
-### テスト、静的コード解析
+### 【Test & Formatter】
 
 ・Rspec<br>
 ・Rubocop<br>
