@@ -8,8 +8,6 @@ This is matching platform for everyone who want to workout with someone.<br>
 ・Ruby(3.0.3)<br>
 ・Rails(6.1.4.4)<br>
 
-### フロントエンド
-
 ・HTML/CSS<br>
 ・Javascript<br>
 ・React.js<br>
