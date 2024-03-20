@@ -18,7 +18,7 @@ I developed everything by myself, referring to official manuals and technical ar
 
 ### 【Programing language】
 
-・Ruby(3.0.3)<br>
+・Ruby(3.0.6)<br>
 ・Rails(6.1.4.4)<br>
 
 ・HTML/CSS<br>

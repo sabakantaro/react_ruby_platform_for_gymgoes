@@ -1,10 +1,9 @@
-version: "3"
 services:
   db:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: password
-    command: --default-authentication-plugin=mysql_native_password
+    command: --default-authentication-plugin=caching_sha2_password
     volumes:
       - mysql-data:/var/lib/mysql
       - /tmp/dockerdir:/etc/mysql/conf.d/
@@ -16,10 +15,10 @@ services:
       dockerfile: Dockerfile
     command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
     volumes:
-      - .:/myapp
-      - ./vendor/bundle:/myapp/vendor/bundle
+      - .:/gymgo
+      - ./vendor/bundle:/gymgo/vendor/bundle
     environment:
-      TZ: Asia/Tokyo
+      TZ: Canada/Pacific
       RAILS_ENV: development
     ports:
       - "3001:3000"
