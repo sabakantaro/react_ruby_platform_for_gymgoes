@@ -1,3 +1,5 @@
+## TODO: This pipeline is a showcase for a CI/CD pipeline. Will fail because the configuration is not yet configured for cost reason.
+
 on:
   push:
     branches: [ main, develop ]
