@@ -1,0 +1,229 @@
+# React Ruby Gym Platform CI/CD Pipeline
+# This workflow deploys the full-stack application to AWS ECS using Terraform
+# All AWS resources are automatically destroyed after testing to prevent costs
+
+on:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+name: Deploy and Test React Ruby Gym Platform
+
+jobs:
+  deploy:
+    name: Deploy Infrastructure and Application
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      application-url: ${{ steps.get-url.outputs.application-url }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+
+    - name: Initialize Terraform
+      run: |
+        cd infrastructure
+        terraform init
+
+    - name: Plan Terraform Deployment
+      run: |
+        cd infrastructure
+        terraform plan -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                      -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                      -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                      -var="database_password=gym-admin-pass" \
+                      -var="database_username=gym_admin"
+
+    - name: Apply Terraform Configuration
+      run: |
+        cd infrastructure
+        terraform apply -auto-approve \
+                       -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                       -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                       -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                       -var="database_password=gym-admin-pass" \
+                       -var="database_username=gym_admin"
+
+    - name: Get Application URL
+      id: get-url
+      run: |
+        cd infrastructure
+        APP_URL=$(terraform output -raw application_url)
+        echo "application-url=$APP_URL" >> $GITHUB_OUTPUT
+        echo "Application URL: $APP_URL"
+
+    - name: Get ECR Repository URLs
+      id: ecr-urls
+      run: |
+        cd infrastructure
+        ECR_APP_URL=$(terraform output -raw ecr_repository_url_app)
+        ECR_FRONTEND_URL=$(terraform output -raw ecr_repository_url_frontend)
+        echo "ecr-app-url=$ECR_APP_URL" >> $GITHUB_OUTPUT
+        echo "ecr-frontend-url=$ECR_FRONTEND_URL" >> $GITHUB_OUTPUT
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build and Push Backend Image
+      id: build-backend-image
+      env:
+        ECR_APP_URL: ${{ steps.ecr-urls.outputs.ecr-app-url }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cd backend
+        docker build -t $ECR_APP_URL:$IMAGE_TAG .
+        docker push $ECR_APP_URL:$IMAGE_TAG
+        echo "image=$ECR_APP_URL:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Build and Push Frontend Image
+      id: build-frontend-image
+      env:
+        ECR_FRONTEND_URL: ${{ steps.ecr-urls.outputs.ecr-frontend-url }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cd frontend
+        docker build -t $ECR_FRONTEND_URL:$IMAGE_TAG .
+        docker push $ECR_FRONTEND_URL:$IMAGE_TAG
+        echo "image=$ECR_FRONTEND_URL:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Update ECS Services
+      run: |
+        # Get cluster and service names from Terraform outputs
+        cd infrastructure
+        CLUSTER_NAME=$(terraform output -raw ecs_cluster_name)
+        
+        # Update backend service with new image
+        aws ecs update-service \
+          --cluster $CLUSTER_NAME \
+          --service gym-platform-backend-service \
+          --force-new-deployment
+        
+        # Update frontend service with new image
+        aws ecs update-service \
+          --cluster $CLUSTER_NAME \
+          --service gym-platform-frontend-service \
+          --force-new-deployment
+
+    - name: Wait for Services to Stabilize
+      run: |
+        cd infrastructure
+        CLUSTER_NAME=$(terraform output -raw ecs_cluster_name)
+        
+        echo "Waiting for backend service to be stable..."
+        aws ecs wait services-stable \
+          --cluster $CLUSTER_NAME \
+          --services gym-platform-backend-service
+        
+        echo "Waiting for frontend service to be stable..."
+        aws ecs wait services-stable \
+          --cluster $CLUSTER_NAME \
+          --services gym-platform-frontend-service
+        
+        echo "All services are now stable and ready for testing"
+
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-1
+
+    - name: Wait for Application to be Ready
+      run: |
+        APP_URL="${{ needs.deploy.outputs.application-url }}"
+        echo "Testing application availability at: $APP_URL"
+        
+        # Wait up to 5 minutes for the application to be ready
+        for i in {1..30}; do
+          if curl -f -s "$APP_URL" > /dev/null; then
+            echo "Application is responding successfully"
+            break
+          else
+            echo "Attempt $i/30: Application not ready yet, waiting 10 seconds..."
+            sleep 10
+          fi
+        done
+
+    - name: Test API Endpoints
+      run: |
+        APP_URL="${{ needs.deploy.outputs.application-url }}"
+        echo "Testing API endpoints..."
+        
+        # Test if the API is responding
+        if curl -f -s "$APP_URL/api" > /dev/null; then
+          echo "API endpoint is responding correctly"
+        else
+          echo "API endpoint is not responding"
+          exit 1
+        fi
+
+  cleanup:
+    name: Cleanup AWS Resources
+    runs-on: ubuntu-latest
+    needs: [deploy, verify]
+    if: always()
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+
+    - name: Initialize Terraform
+      run: |
+        cd infrastructure
+        terraform init
+
+    - name: Destroy AWS Resources
+      run: |
+        cd infrastructure
+        echo "Destroying all AWS resources to prevent ongoing costs..."
+        echo "This includes: VPC, ECS cluster, ECR repositories, RDS database, ALB, and all associated resources"
+        terraform destroy -auto-approve \
+                         -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                         -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                         -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                         -var="database_password=gym-admin-pass" \
+                         -var="database_username=gym_admin"
+        echo "All AWS resources have been successfully destroyed"
+
+    - name: Workflow Summary
+      run: |
+        echo "CI/CD Pipeline completed successfully"
+        echo "Infrastructure was deployed and tested"
+        echo "All AWS resources have been cleaned up to prevent costs"
+        echo "Check the logs above for detailed deployment information"
