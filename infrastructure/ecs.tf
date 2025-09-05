@@ -25,7 +25,7 @@ resource "aws_ecs_task_definition" "gym_platform_backend" {
   container_definitions = jsonencode([
     {
       name  = "backend"
-      image = "${var.aws_account_id}.dkr.ecr.ap-northeast-1.amazonaws.com/${var.r_prefix}-app:latest"
+      image = "${aws_ecr_repository.gym_platform_app.repository_url}:latest"
       
       portMappings = [
         {
@@ -77,7 +77,7 @@ resource "aws_ecs_task_definition" "gym_platform_frontend" {
   container_definitions = jsonencode([
     {
       name  = "frontend"
-      image = "${var.aws_account_id}.dkr.ecr.ap-northeast-1.amazonaws.com/${var.r_prefix}-frontend:latest"
+      image = "${aws_ecr_repository.gym_platform_frontend.repository_url}:latest"
       
       portMappings = [
         {
