@@ -1,0 +1,17 @@
+# AWS Configuration
+aws_access_key = "your-aws-access-key"
+aws_secret_key = "your-aws-secret-key"
+aws_account_id = "your-aws-account-id"
+
+# Database Configuration
+database_name     = "gym_platform_production"
+database_username = "gym_admin"
+database_password = "your-secure-database-password"
+
+# Application Configuration
+r_prefix    = "gym-platform"
+environment = "production"
+
+# Optional: Override default values
+# r_prefix = "gym-platform-staging"  # for staging environment
+# environment = "staging"
