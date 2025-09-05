@@ -22,6 +22,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "gym_platform_alb_logs_lifecycl
     id     = "log_retention"
     status = "Enabled"
 
+    filter {
+      prefix = ""
+    }
+
     expiration {
       days = 30
     }

@@ -124,11 +124,6 @@ resource "aws_ecs_service" "gym_platform_backend_service" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
-  deployment_configuration {
-    maximum_percent         = 200
-    minimum_healthy_percent = 100
-  }
-
   network_configuration {
     subnets = [
       aws_subnet.gym_platform_public_subnet_1a.id,
@@ -163,11 +158,6 @@ resource "aws_ecs_service" "gym_platform_frontend_service" {
   task_definition = aws_ecs_task_definition.gym_platform_frontend.arn
   desired_count   = 1
   launch_type     = "FARGATE"
-
-  deployment_configuration {
-    maximum_percent         = 200
-    minimum_healthy_percent = 100
-  }
 
   network_configuration {
     subnets = [
