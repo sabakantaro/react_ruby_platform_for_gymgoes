@@ -1,4 +1,3 @@
-# S3 bucket for ALB logs
 resource "aws_s3_bucket" "gym_platform_alb_logs" {
   bucket = "${var.r_prefix}-alb-logs-${formatdate("YYYYMMDD", timestamp())}"
 
@@ -6,46 +5,6 @@ resource "aws_s3_bucket" "gym_platform_alb_logs" {
     Name        = "${var.r_prefix}-alb-logs"
     Environment = var.environment
   }
-}
-
-# S3 bucket policy for ALB access logs
-resource "aws_s3_bucket_policy" "gym_platform_alb_logs_policy" {
-  bucket = aws_s3_bucket.gym_platform_alb_logs.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::582318560864:root"  # ALB service account for ap-northeast-1
-        }
-        Action = "s3:PutObject"
-        Resource = "${aws_s3_bucket.gym_platform_alb_logs.arn}/*"
-      },
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "delivery.logs.amazonaws.com"
-        }
-        Action = "s3:PutObject"
-        Resource = "${aws_s3_bucket.gym_platform_alb_logs.arn}/*"
-        Condition = {
-          StringEquals = {
-            "s3:x-amz-acl" = "bucket-owner-full-control"
-          }
-        }
-      },
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "delivery.logs.amazonaws.com"
-        }
-        Action = "s3:GetBucketAcl"
-        Resource = aws_s3_bucket.gym_platform_alb_logs.arn
-      }
-    ]
-  })
 }
 
 resource "aws_s3_bucket_versioning" "gym_platform_alb_logs_versioning" {
@@ -60,11 +19,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "gym_platform_alb_logs_lifecycl
 
   rule {
     id     = "log_retention"
-    status = "Enabled"
 
     filter {
-      prefix = ""
+      prefix = "logs/"
     }
+
+    status = "Enabled"
 
     expiration {
       days = 30
