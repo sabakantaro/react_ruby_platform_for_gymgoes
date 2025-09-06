@@ -42,3 +42,15 @@ variable "environment" {
   type        = string
   default     = "production"
 }
+
+variable "secret_key_base" {
+  description = "Rails secret key base"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+resource "random_password" "secret_key_base" {
+  length  = 128
+  special = false
+}

@@ -12,7 +12,6 @@ resource "aws_ecs_cluster" "gym_platform_cluster" {
   }
 }
 
-# Task definition for the backend (Rails API)
 resource "aws_ecs_task_definition" "gym_platform_backend" {
   family                   = "${var.r_prefix}-backend"
   requires_compatibilities = ["FARGATE"]
@@ -41,14 +40,14 @@ resource "aws_ecs_task_definition" "gym_platform_backend" {
         },
         {
           name  = "DATABASE_URL"
-          value = "postgresql://${var.database_username}:${var.database_password}@${aws_db_instance.gym_platform_db.endpoint}:5432/${var.database_name}"
+          value = "mysql2://${var.database_username}:${var.database_password}@${aws_db_instance.gym_platform_db.endpoint}/${var.database_name}"
         }
       ]
       
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.gym_platform_app_log_group.name
+          "awslogs-group"         = "/ecs/${var.r_prefix}-backend"
           "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "ecs"
         }
@@ -64,7 +63,6 @@ resource "aws_ecs_task_definition" "gym_platform_backend" {
   }
 }
 
-# Task definition for the frontend (React)
 resource "aws_ecs_task_definition" "gym_platform_frontend" {
   family                   = "${var.r_prefix}-frontend"
   requires_compatibilities = ["FARGATE"]
@@ -100,7 +98,7 @@ resource "aws_ecs_task_definition" "gym_platform_frontend" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.gym_platform_frontend_log_group.name
+          "awslogs-group"         = "/ecs/${var.r_prefix}-frontend"
           "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "ecs"
         }
@@ -116,7 +114,6 @@ resource "aws_ecs_task_definition" "gym_platform_frontend" {
   }
 }
 
-# ECS Service for backend
 resource "aws_ecs_service" "gym_platform_backend_service" {
   name            = "${var.r_prefix}-backend-service"
   cluster         = aws_ecs_cluster.gym_platform_cluster.id
@@ -151,7 +148,6 @@ resource "aws_ecs_service" "gym_platform_backend_service" {
   }
 }
 
-# ECS Service for frontend
 resource "aws_ecs_service" "gym_platform_frontend_service" {
   name            = "${var.r_prefix}-frontend-service"
   cluster         = aws_ecs_cluster.gym_platform_cluster.id

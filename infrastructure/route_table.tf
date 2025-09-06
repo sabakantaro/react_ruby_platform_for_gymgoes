@@ -23,7 +23,6 @@ resource "aws_route_table_association" "gym_platform_public_subnet_1c_rt_assoc" 
   route_table_id = aws_route_table.gym_platform_public_rt.id
 }
 
-# Private route table (for future NAT Gateway usage)
 resource "aws_route_table" "gym_platform_private_rt" {
   vpc_id = aws_vpc.gym_platform_vpc.id
 
@@ -34,12 +33,4 @@ resource "aws_route_table" "gym_platform_private_rt" {
   }
 }
 
-resource "aws_route_table_association" "gym_platform_private_subnet_1a_rt_assoc" {
-  subnet_id      = aws_subnet.gym_platform_private_subnet_1a.id
-  route_table_id = aws_route_table.gym_platform_private_rt.id
-}
 
-resource "aws_route_table_association" "gym_platform_private_subnet_1c_rt_assoc" {
-  subnet_id      = aws_subnet.gym_platform_private_subnet_1c.id
-  route_table_id = aws_route_table.gym_platform_private_rt.id
-}
