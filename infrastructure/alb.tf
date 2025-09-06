@@ -11,12 +11,6 @@ resource "aws_lb" "gym_platform_alb" {
 
   enable_deletion_protection = false
 
-  # Disable access logs for now to avoid S3 permission issues
-  # access_logs {
-  #   bucket  = aws_s3_bucket.gym_platform_alb_logs.bucket
-  #   enabled = true
-  # }
-
   tags = {
     Name        = "${var.r_prefix}-alb"
     Environment = var.environment
