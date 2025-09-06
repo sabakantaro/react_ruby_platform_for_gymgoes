@@ -13,6 +13,9 @@ RUN bundle install
 
 COPY . $APP_PATH
 
+# Generate secret key base at build time
+RUN RAILS_ENV=production bundle exec rails secret > /tmp/secret_key_base
+
 COPY entrypoint.sh /usr/bin/
 RUN chmod +x /usr/bin/entrypoint.sh
 ENTRYPOINT ["entrypoint.sh"]
