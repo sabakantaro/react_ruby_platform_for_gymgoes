@@ -1,4 +1,3 @@
-# Application Security Group
 resource "aws_security_group" "gym_platform_sg_app" {
   name        = "${var.r_prefix}-sg-app"
   description = "Security group for gym platform application"
@@ -77,17 +76,9 @@ resource "aws_security_group" "gym_platform_sg_db" {
   vpc_id      = aws_vpc.gym_platform_vpc.id
 
   ingress {
-    description     = "MySQL/PostgreSQL from app"
+    description     = "MySQL from app"
     from_port       = 3306
     to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [aws_security_group.gym_platform_sg_app.id]
-  }
-
-  ingress {
-    description     = "PostgreSQL from app"
-    from_port       = 5432
-    to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.gym_platform_sg_app.id]
   }

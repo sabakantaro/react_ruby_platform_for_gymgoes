@@ -1,55 +1,116 @@
-## TODO: This pipeline is a showcase for a CI/CD pipeline. Will fail because the configuration is not yet configured for cost reason.
-
 on:
   push:
     branches: [ main, develop ]
+  workflow_dispatch:
 
-name: Deploy React Ruby Gym Platform to Amazon ECS
+name: Deploy application to AWS ECS
 
 jobs:
   deploy:
-    name: Deploy
+    name: Deploy Infrastructure and Application
     runs-on: ubuntu-latest
     environment: production
+    env:
+      AWS_REGION: us-east-1
+    outputs:
+      application-url: ${{ steps.get-url.outputs.application-url }}
 
     steps:
-    - name: Checkout
+    - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
+    - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-northeast-1
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+
+    - name: Initialize Terraform
+      run: |
+        cd infrastructure
+        terraform init
+
+    - name: Plan Terraform Deployment
+      run: |
+        cd infrastructure
+        terraform plan -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                      -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                      -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                      -var="database_password=${{ secrets.DATABASE_PASSWORD }}" \
+                      -var="database_username=${{ secrets.DATABASE_USERNAME }}"
+
+    - name: Apply Terraform Configuration
+      run: |
+        cd infrastructure
+        terraform apply -auto-approve \
+                       -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                       -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                       -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                       -var="database_password=${{ secrets.DATABASE_PASSWORD }}" \
+                       -var="database_username=${{ secrets.DATABASE_USERNAME }}"
+
+    - name: Get Application URL
+      id: get-url
+      run: |
+        cd infrastructure
+        APP_URL=$(terraform output -raw application_url)
+        echo "application-url=$APP_URL" >> $GITHUB_OUTPUT
+        echo "Application URL: $APP_URL"
+
+    - name: Get ECR Repository URLs
+      id: ecr-urls
+      run: |
+        cd infrastructure
+        ECR_APP_URL=$(terraform output -raw ecr_repository_url_app)
+        ECR_FRONTEND_URL=$(terraform output -raw ecr_repository_url_frontend)
+        echo "ecr-app-url=$ECR_APP_URL" >> $GITHUB_OUTPUT
+        echo "ecr-frontend-url=$ECR_FRONTEND_URL" >> $GITHUB_OUTPUT
 
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build, tag, and push backend image to Amazon ECR
-      id: build-image
+    - name: Build and Push Backend Image
+      id: build-backend-image
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: gym-platform-app
+        ECR_APP_URL: ${{ steps.ecr-urls.outputs.ecr-app-url }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        cd backend &&
-        docker build -f ./ecs/Dockerfile . -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        cd backend
+        docker build --platform linux/amd64 -t $ECR_APP_URL:$IMAGE_TAG .
+        docker push $ECR_APP_URL:$IMAGE_TAG
+        echo "image=$ECR_APP_URL:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: backend/ecs/task-definition.json
-        container-name: app
-        image: ${{ steps.build-image.outputs.image }}
+    - name: Build and Push Frontend Image
+      id: build-frontend-image
+      env:
+        ECR_FRONTEND_URL: ${{ steps.ecr-urls.outputs.ecr-frontend-url }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cd frontend
+        docker build --platform linux/amd64 -t $ECR_FRONTEND_URL:$IMAGE_TAG .
+        docker push $ECR_FRONTEND_URL:$IMAGE_TAG
+        echo "image=$ECR_FRONTEND_URL:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: gym-platform-service
-        cluster: gym-platform-cluster
+    - name: Update ECS Services
+      run: |
+        cd infrastructure
+        CLUSTER_NAME=$(terraform output -raw ecs_cluster_name)
+        
+        aws ecs update-service \
+          --cluster $CLUSTER_NAME \
+          --service gym-platform-backend-service \
+          --force-new-deployment
+        
+        aws ecs update-service \
+          --cluster $CLUSTER_NAME \
+          --service gym-platform-frontend-service \
+          --force-new-deployment
+
+        echo "Deployment complete"
