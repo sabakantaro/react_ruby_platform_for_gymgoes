@@ -18,7 +18,7 @@ resource "aws_s3_bucket_policy" "gym_platform_alb_logs_policy" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::127311923021:root"  # ALB service account for ap-northeast-1
+          AWS = "arn:aws:iam::582318560864:root"  # ALB service account for ap-northeast-1
         }
         Action = "s3:PutObject"
         Resource = "${aws_s3_bucket.gym_platform_alb_logs.arn}/*"

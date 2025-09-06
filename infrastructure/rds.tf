@@ -1,5 +1,5 @@
 resource "aws_db_subnet_group" "gym_platform_db_subnet_group" {
-  name        = "${var.r_prefix}-db-subnet-group"
+  name        = "${var.r_prefix}-db-subnet-group-${formatdate("YYYYMMDD", timestamp())}"
   description = "Database subnet group for gym platform"
   subnet_ids = [
     aws_subnet.gym_platform_private_subnet_1a.id,
