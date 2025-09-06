@@ -113,19 +113,4 @@ jobs:
           --service gym-platform-frontend-service \
           --force-new-deployment
 
-    - name: Wait for Services to Stabilize
-      run: |
-        cd infrastructure
-        CLUSTER_NAME=$(terraform output -raw ecs_cluster_name)
-        
-        echo "Waiting for backend service to be stable..."
-        aws ecs wait services-stable \
-          --cluster $CLUSTER_NAME \
-          --services gym-platform-backend-service
-        
-        echo "Waiting for frontend service to be stable..."
-        aws ecs wait services-stable \
-          --cluster $CLUSTER_NAME \
-          --services gym-platform-frontend-service
-        
         echo "Deployment complete"
