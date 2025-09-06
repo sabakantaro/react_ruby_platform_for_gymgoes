@@ -8,6 +8,46 @@ resource "aws_s3_bucket" "gym_platform_alb_logs" {
   }
 }
 
+# S3 bucket policy for ALB access logs
+resource "aws_s3_bucket_policy" "gym_platform_alb_logs_policy" {
+  bucket = aws_s3_bucket.gym_platform_alb_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::127311923021:root"  # ALB service account for ap-northeast-1
+        }
+        Action = "s3:PutObject"
+        Resource = "${aws_s3_bucket.gym_platform_alb_logs.arn}/*"
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action = "s3:PutObject"
+        Resource = "${aws_s3_bucket.gym_platform_alb_logs.arn}/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.gym_platform_alb_logs.arn
+      }
+    ]
+  })
+}
+
 resource "aws_s3_bucket_versioning" "gym_platform_alb_logs_versioning" {
   bucket = aws_s3_bucket.gym_platform_alb_logs.id
   versioning_configuration {
