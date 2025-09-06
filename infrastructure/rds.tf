@@ -15,7 +15,7 @@ resource "aws_db_subnet_group" "gym_platform_db_subnet_group" {
 resource "aws_db_instance" "gym_platform_db" {
   identifier     = "${var.r_prefix}-db"
   engine         = "postgres"
-  engine_version = "15.3"
+  engine_version = "15.13"
   instance_class = "db.t3.micro"
 
   allocated_storage     = 20
