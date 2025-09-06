@@ -1,4 +1,3 @@
-# Application Security Group
 resource "aws_security_group" "gym_platform_sg_app" {
   name        = "${var.r_prefix}-sg-app"
   description = "Security group for gym platform application"

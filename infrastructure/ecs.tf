@@ -49,7 +49,7 @@ resource "aws_ecs_task_definition" "gym_platform_backend" {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.gym_platform_app_log_group.name
-          "awslogs-region"        = "ap-northeast-1"
+          "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "ecs"
         }
       }
@@ -101,7 +101,7 @@ resource "aws_ecs_task_definition" "gym_platform_frontend" {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.gym_platform_frontend_log_group.name
-          "awslogs-region"        = "ap-northeast-1"
+          "awslogs-region"        = "us-east-1"
           "awslogs-stream-prefix" = "ecs"
         }
       }
