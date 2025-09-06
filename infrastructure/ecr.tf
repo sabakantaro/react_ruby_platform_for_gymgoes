@@ -35,6 +35,7 @@ resource "aws_ecr_lifecycle_policy" "gym_platform_app_lifecycle_policy" {
         description  = "Keep last 50 tagged images"
         selection = {
           tagStatus     = "tagged"
+          tagPrefixList = ["v"]
           countType     = "imageCountMoreThan"
           countNumber   = 50
         }
