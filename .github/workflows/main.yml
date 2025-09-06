@@ -213,13 +213,91 @@ jobs:
         cd infrastructure
         echo "Destroying all AWS resources to prevent ongoing costs..."
         echo "This includes: VPC, ECS cluster, ECR repositories, RDS database, ALB, and all associated resources"
+        
+        # First attempt: Normal destroy
+        echo "Attempting normal terraform destroy..."
         terraform destroy -auto-approve \
                          -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
                          -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
                          -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
                          -var="database_password=gym-admin-pass" \
-                         -var="database_username=gym_admin"
-        echo "All AWS resources have been successfully destroyed"
+                         -var="database_username=gym_admin" || true
+        
+        # Second attempt: Force destroy with refresh
+        echo "Attempting force destroy with refresh..."
+        terraform refresh \
+                         -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                         -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                         -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                         -var="database_password=gym-admin-pass" \
+                         -var="database_username=gym_admin" || true
+        
+        terraform destroy -auto-approve \
+                         -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                         -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                         -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                         -var="database_password=gym-admin-pass" \
+                         -var="database_username=gym_admin" || true
+        
+        # Third attempt: Target specific resources that might be stuck
+        echo "Attempting targeted destroy for remaining resources..."
+        terraform destroy -auto-approve \
+                         -target=aws_ecs_service.gym_platform_backend_service \
+                         -target=aws_ecs_service.gym_platform_frontend_service \
+                         -target=aws_lb.gym_platform_alb \
+                         -target=aws_db_instance.gym_platform_db \
+                         -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                         -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                         -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                         -var="database_password=gym-admin-pass" \
+                         -var="database_username=gym_admin" || true
+        
+        # Final cleanup attempt
+        echo "Final cleanup attempt..."
+        terraform destroy -auto-approve \
+                         -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+                         -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+                         -var="aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" \
+                         -var="database_password=gym-admin-pass" \
+                         -var="database_username=gym_admin" || true
+        
+        echo "Cleanup process completed. Check above for any remaining resources."
+
+    - name: Manual Cleanup Fallback
+      run: |
+        echo "Performing manual cleanup of any remaining resources..."
+        
+        # Clean up ECS services
+        echo "Cleaning up ECS services..."
+        aws ecs list-services --cluster gym-platform-cluster --query 'serviceArns[]' --output text | \
+        xargs -I {} aws ecs update-service --cluster gym-platform-cluster --service {} --desired-count 0 || true
+        
+        aws ecs list-services --cluster gym-platform-cluster --query 'serviceArns[]' --output text | \
+        xargs -I {} aws ecs delete-service --cluster gym-platform-cluster --service {} || true
+        
+        # Clean up ECS cluster
+        echo "Cleaning up ECS cluster..."
+        aws ecs delete-cluster --cluster gym-platform-cluster || true
+        
+        # Clean up ECR repositories
+        echo "Cleaning up ECR repositories..."
+        aws ecr delete-repository --repository-name gym-platform-app --force || true
+        aws ecr delete-repository --repository-name gym-platform-frontend --force || true
+        
+        # Clean up RDS instances
+        echo "Cleaning up RDS instances..."
+        aws rds delete-db-instance --db-instance-identifier gym-platform-db --skip-final-snapshot || true
+        
+        # Clean up Load Balancers
+        echo "Cleaning up Load Balancers..."
+        aws elbv2 describe-load-balancers --query 'LoadBalancers[?contains(LoadBalancerName, `gym-platform`)].LoadBalancerArn' --output text | \
+        xargs -I {} aws elbv2 delete-load-balancer --load-balancer-arn {} || true
+        
+        # Clean up S3 buckets
+        echo "Cleaning up S3 buckets..."
+        aws s3 ls | grep gym-platform | awk '{print $3}' | xargs -I {} aws s3 rb s3://{} --force || true
+        
+        echo "Manual cleanup completed."
 
     - name: Workflow Summary
       run: |
